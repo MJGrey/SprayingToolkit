@@ -8,7 +8,6 @@ from mitmproxy import ctx, exceptions, http
 
 
 class Vaporizer:
-
     def __init__(self):
         self.emails = set()
         self.names = set()
@@ -20,37 +19,31 @@ class Vaporizer:
 
     def load(self, loader):
         loader.add_option(
-            name="sprayer",
-            typespec=str,
-            default='',
-            help="sprayer to use"
+            name="sprayer", typespec=str, default="", help="sprayer to use"
         )
 
         loader.add_option(
             name="domain",
             typespec=str,
-            default='',
-            help="domain to use for email generation"
+            default="",
+            help="domain to use for email generation",
         )
 
         loader.add_option(
             name="target",
             typespec=str,
-            default='',
-            help="target domain or url to password spray"
+            default="",
+            help="target domain or url to password spray",
         )
 
         loader.add_option(
-            name="password",
-            typespec=str,
-            default='',
-            help="password to spray"
+            name="password", typespec=str, default="", help="password to spray"
         )
 
         loader.add_option(
             name="email_format",
             typespec=str,
-            default='{first}.{last}',
+            default="{first}.{last}",
             help="email format",
         )
 
@@ -71,9 +64,7 @@ class Vaporizer:
     def running(self):
         if not self.atomizer and not ctx.options.no_spray:
             self.atomizer = Atomizer(
-                loop=self.loop,
-                target=ctx.options.target,
-                threads=ctx.options.threads
+                loop=self.loop, target=ctx.options.target, threads=ctx.options.threads
             )
 
             getattr(self.atomizer, ctx.options.sprayer.lower())()
@@ -81,7 +72,9 @@ class Vaporizer:
     def response(self, flow: http.HTTPFlow) -> None:
         try:
             emails = []
-            if "html" in flow.response.headers["Content-Type"] and len(flow.response.content):
+            if "html" in flow.response.headers["Content-Type"] and len(
+                flow.response.content
+            ):
                 if "google.com" in flow.request.host:
                     names = google(flow.response.content)
                 elif "bing.com" in flow.request.host:
@@ -102,8 +95,10 @@ class Vaporizer:
                 if self.atomizer:
                     asyncio.ensure_future(
                         self.atomizer.atomize(
-                            userfile=[email for email in emails if email not in self.emails],
-                            password=ctx.options.password
+                            userfile=[
+                                email for email in emails if email not in self.emails
+                            ],
+                            password=ctx.options.password,
                         )
                     )
 
@@ -114,11 +109,11 @@ class Vaporizer:
     def shutdown(self):
         with open("emails.txt", "a+") as email_file:
             for email in self.emails:
-                email_file.write(email + '\n')
+                email_file.write(email + "\n")
 
         with open("names.txt", "a+") as name_file:
             for name in self.names:
-                name_file.write(name + '\n')
+                name_file.write(name + "\n")
 
         ctx.log.info(print_good(f"Dumped {len(self.emails)} email(s) to emails.txt"))
 
@@ -130,6 +125,4 @@ class Vaporizer:
         self.loop.run_until_complete(asyncio.gather(*pending))
 
 
-addons = [
-    Vaporizer()
-]
+addons = [Vaporizer()]

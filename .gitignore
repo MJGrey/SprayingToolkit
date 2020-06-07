@@ -1,8 +1,8 @@
+.vscode
 passwords.txt
 emails.txt
 names.txt
-lync_valid_accounts.txt
-owa_valid_accounts.txt
+*_valid_accounts.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

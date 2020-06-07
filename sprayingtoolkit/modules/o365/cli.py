@@ -1,0 +1,36 @@
+import asyncio
+import typer
+import logging
+from sprayingtoolkit.utils.common import coro
+from sprayingtoolkit.models import O365SprayMethods, O365ValidationMethods
+
+log = logging.getLogger("atomizer")
+cli = typer.Typer()
+
+@cli.command()
+@coro
+async def spray(
+    target: str,
+    username: str,
+    password: str,
+    spray_method: O365SprayMethods = typer.Option(O365SprayMethods.msol),
+):
+    """
+    Spray O365
+    """
+
+    log.debug("Ok!")
+
+@cli.command()
+@coro
+async def validate(
+    target: str,
+    username: str,
+    password: str,
+    validation_method: O365ValidationMethods = typer.Option(O365ValidationMethods.uhoh365)
+):
+    """
+    Validate O365 accounts using a number of techniques 
+    """
+
+    log.debug("Ok!")

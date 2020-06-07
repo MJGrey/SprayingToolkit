@@ -31,7 +31,7 @@ Or use a Python virtual environment if you don't want to install the packages gl
 
 ### Atomizer
 
-A blazing fast password sprayer for Lync/Skype For Business and OWA, built on Asyncio and Python 3.7
+A blazing fast password sprayer for Lync/Skype For Business and OWA, built on AsyncIO and Python 3.7
 
 #### Usage
 ```
