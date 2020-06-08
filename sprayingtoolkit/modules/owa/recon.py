@@ -15,12 +15,15 @@ from sprayingtoolkit.models import HostingLocation
 
 log = logging.getLogger("atomizer.modules.owa.recon")
 
+
 class OwaRecon:
     def __init__(self, target):
         self.target = target
         self.domain = target
         self.headers = {}
-        self.client = httpx.AsyncClient(verify=False, trust_env=True, http2=True, headers=self.headers)
+        self.client = httpx.AsyncClient(
+            verify=False, trust_env=True, http2=True, headers=self.headers
+        )
 
     async def start(self) -> None:
         netbios_domain = None
@@ -28,15 +31,15 @@ class OwaRecon:
 
         autodiscover_url, hosting_location = await asyncio.gather(
             self.get_autodiscover_url(self.domain),
-            self.get_hosting_location(self.domain)
+            self.get_hosting_location(self.domain),
         )
 
         log.debug(f"Using OWA autodiscover URL: {autodiscover_url}")
 
-        if hosting_location == HostingLocation.internal: 
+        if hosting_location == HostingLocation.internal:
             netbios_domain, internal_ips = await asyncio.gather(
                 self.get_internal_domain(autodiscover_url),
-                self.get_internal_ips(autodiscover_url)
+                self.get_internal_ips(autodiscover_url),
             )
 
         return {
@@ -44,7 +47,7 @@ class OwaRecon:
             "hosting_location": hosting_location,
             "autodiscover_url": autodiscover_url,
             "netbios_domain": netbios_domain,
-            "internal_ips": internal_ips
+            "internal_ips": internal_ips,
         }
 
     async def shutdown(self):
@@ -118,7 +121,9 @@ class OwaRecon:
             if not isinstance(r, ConnectError) and r.status_code in [401, 403]:
                 return str(r.url)
 
-        raise AutodiscoverUrlNotFound(f"Unable to find autodiscover url for '{domain}' target does not seem to be using OWA")
+        raise AutodiscoverUrlNotFound(
+            f"Unable to find autodiscover url for '{domain}' target does not seem to be using OWA"
+        )
 
     async def get_internal_domain(self, url: HttpUrl) -> str:
         # Stolen from https://github.com/dafthack/MailSniper

@@ -8,12 +8,11 @@ from sprayingtoolkit.modules.owa.sprayers.owa import OwaSprayer
 log = logging.getLogger("atomizer.modules.owa.cli")
 cli = typer.Typer()
 
+
 @cli.command()
 @coro
 async def spray(
-    target: str,
-    username: str,
-    password: str
+    target: str, username: str, password: str, interval: str = typer.Option("1:00:00")
 ):
     """
     Spray OWA
@@ -24,14 +23,13 @@ async def spray(
     finally:
         await owa_recon.shutdown()
 
-    #OwaSprayer(**owa_recon)
+    # OwaSprayer(**owa_recon)
     log.debug("Ok!")
+
 
 @cli.command()
 @coro
-async def recon(
-    target: str
-):
+async def recon(target: str):
     """
     Perform recon only
     """

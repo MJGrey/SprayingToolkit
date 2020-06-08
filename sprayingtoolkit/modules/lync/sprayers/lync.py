@@ -4,13 +4,14 @@ import logging
 from lxml import etree
 from datetime import datetime, timedelta
 from sprayingtoolkit.utils.time import simple_utc
+from sprayingtoolkit.base import BaseSprayer
 
 log = logging.getLogger("atomizer.modules.lync.sprayer")
 log.setLevel(logging.DEBUG)
 
 
-class LyncSprayer:
-    def __init__(self, target, auth_url, hosting_location):
+class LyncSprayer(BaseSprayer):
+    def __init__(self, target, auth_url, hosting_location, interval):
         self.domain = target
         self.auth_url = auth_url
         self.hosting_location = hosting_location
@@ -19,10 +20,6 @@ class LyncSprayer:
 
     async def shutdown(self):
         await self.client.aclose()
-        with open("lync_valid_accounts.txt", "a+") as account_file:
-            account_file.writelines(self.valid_accounts)
-
-        log.info(f"Dumped {len(self.valid_accounts)} valid accounts to lync_valid_accounts.txt")
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L409
     async def auth_o365(self, username, password):
@@ -74,21 +71,31 @@ class LyncSprayer:
         msg = xml.xpath("//text()")[-1]
 
         if "Invalid STS request" in msg:
-            log.error("Invalid request was received by server, dumping request & response XML")
+            log.error(
+                "Invalid request was received by server, dumping request & response XML"
+            )
             log.error(f"Request:\n{soap}\nResponse:\n{r.text}\n")
         elif ("the account must be added" in msg) or (
             "The user account does not exist" in msg
         ):
-            log.info(f"Authentication failed: {username}:{password} (Username does not exist)")
+            log.info(
+                f"Authentication failed: {username}:{password} (Username does not exist)"
+            )
         elif "you must use multi-factor" in msg.lower():
-            log.info(f"Found Credentials: {username}:{password} (However, MFA is required)")
+            log.info(
+                f"Found Credentials: {username}:{password} (However, MFA is required)"
+            )
             self.valid_accounts.add(f"{username}:{password}")
 
         elif "No tenant-identifying information found" in msg:
-            log.info(f"Authentication failed: {username}:{password} (No tenant-identifying information found)")
+            log.info(
+                f"Authentication failed: {username}:{password} (No tenant-identifying information found)"
+            )
 
         elif "FailedAuthentication" in r.text:  # Fallback
-            log.info(f"Authentication failed: {username}:{password} (Invalid credentials)")
+            log.info(
+                f"Authentication failed: {username}:{password} (Invalid credentials)"
+            )
 
         else:
             log.info(f"Found credentials: {username}:{password}")

@@ -228,8 +228,8 @@ def ntlmdecode(authenticate_header):
     if not st[:8] == b"NTLMSSP\x00":
         raise Exception("NTLMSSP header not found at start of input string")
 
-    #ver_tup = struct.unpack("<i", st[8:12])
-    #ver = ver_tup[0]
+    # ver_tup = struct.unpack("<i", st[8:12])
+    # ver = ver_tup[0]
 
     # print("Msg Type: %d (%s)" % (ver, msg_types[ver]))
 
@@ -238,6 +238,6 @@ def ntlmdecode(authenticate_header):
 
     return pretty_print_challenge(st)
 
-    #raise Exception(
+    # raise Exception(
     #    f"Unknown message structure.  Have a raw (hex-encoded) message: {hexlify(st)}"
-    #)
+    # )

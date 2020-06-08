@@ -9,6 +9,7 @@ log = logging.getLogger("atomizer.api.recon")
 
 router = APIRouter()
 
+
 @router.get("/owa")
 async def owa_recon(request: Request, target: Union[str, HttpUrl]) -> OwaReconData:
     r = owa.recon(target)
@@ -18,6 +19,7 @@ async def owa_recon(request: Request, target: Union[str, HttpUrl]) -> OwaReconDa
     finally:
         await r.shutdown()
 
+
 @router.get("/lync")
 async def lync_recon(request: Request, target: Union[str, HttpUrl]) -> LyncReconData:
     r = lync.recon(target)
@@ -26,6 +28,7 @@ async def lync_recon(request: Request, target: Union[str, HttpUrl]) -> LyncRecon
         return LyncReconData(**recon_data)
     finally:
         await r.shutdown()
+
 
 @router.get("/o365")
 async def o365_recon(request: Request, target: str) -> O365ReconData:

@@ -10,6 +10,7 @@ from sprayingtoolkit.exceptions import LyncBaseUrlNotFound
 
 log = logging.getLogger("atomizer.modules.lync.recon")
 
+
 class LyncRecon:
     def __init__(self, target):
         self.target = target
@@ -24,7 +25,7 @@ class LyncRecon:
 
         base_url = await self.get_base_url(autodiscover_url)
         auth_url = urlparse.urljoin(
-                "/".join(base_url.split("/")[0:3]), "/WebTicket/oauthtoken"
+            "/".join(base_url.split("/")[0:3]), "/WebTicket/oauthtoken"
         )
 
         log.debug(f"Lync/S4B base url: {base_url}")
@@ -45,7 +46,7 @@ class LyncRecon:
 
     async def shutdown(self):
         await self.client.aclose()
-    
+
     async def get_hosting_location(self, base_url):
         if "online.lync.com" in base_url:
             log.info("Target appears to be using O365")
@@ -60,25 +61,27 @@ class LyncRecon:
             f"https://lyncdiscoverinternal.{domain}",
         ]
 
-        tasks = [
-            self.client.get(url) for url in urls
-        ]
+        tasks = [self.client.get(url) for url in urls]
 
         for r in await asyncio.gather(*tasks, return_exceptions=True):
             if not isinstance(r, ConnectError):
                 return str(r.url)
 
-        raise AutodiscoverUrlNotFound(f"Unable to find autodiscover url for '{domain}' target does not seem to be using Lync/S4B")
+        raise AutodiscoverUrlNotFound(
+            f"Unable to find autodiscover url for '{domain}' target does not seem to be using Lync/S4B"
+        )
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L259
     async def get_base_url(self, url: str) -> str:
         log.debug(f"Resolving Lync/S4B base URL from: {url}")
         r = await self.client.get(url, headers={"Content-Type": "application/json"})
-        #log.debug(r.status_code, r.headers, r.text)
+        # log.debug(r.status_code, r.headers, r.text)
         try:
             data = r.json()
         except JSONDecodeError:
-            raise LyncBaseUrlNotFound(f"Unable to find Lync/S4B base url from '{url}', target is probably not using Lync/S4B")
+            raise LyncBaseUrlNotFound(
+                f"Unable to find Lync/S4B base url from '{url}', target is probably not using Lync/S4B"
+            )
         else:
             if "user" in data["_links"]:
                 return data["_links"]["user"]["href"]

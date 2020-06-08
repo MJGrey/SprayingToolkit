@@ -10,17 +10,25 @@ import threading
 log = logging.getLogger("atomizer.utils.common")
 log.setLevel(logging.DEBUG)
 
+
 def beautify_json(obj) -> str:
-    return "\n" + json.dumps(obj, sort_keys=True, indent=4, separators=(',', ': '))
+    return "\n" + json.dumps(obj, sort_keys=True, indent=4, separators=(",", ": "))
+
 
 def gen_random_string(length: int = 5, only_letters: bool = False) -> str:
-    char_set = (string.ascii_lowercase + string.digits) if not only_letters else string.ascii_lowercase
-    return ''.join(random.sample(char_set, int(length)))
+    char_set = (
+        (string.ascii_lowercase + string.digits)
+        if not only_letters
+        else string.ascii_lowercase
+    )
+    return "".join(random.sample(char_set, int(length)))
+
 
 def coro(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         return asyncio.run(f(*args, **kwargs))
+
     return wrapper
 
 
@@ -40,8 +48,7 @@ class SyncToAsync:
     async def __call__(self, *args, **kwargs):
         loop = asyncio.get_event_loop()
         future = loop.run_in_executor(
-            None,
-            functools.partial(self.thread_handler, loop, *args, **kwargs),
+            None, functools.partial(self.thread_handler, loop, *args, **kwargs),
         )
         return await asyncio.wait_for(future, timeout=None)
 
@@ -59,5 +66,6 @@ class SyncToAsync:
         self.threadlocal.main_event_loop = loop
         # Run the function
         return self.func(*args, **kwargs)
+
 
 make_async = SyncToAsync

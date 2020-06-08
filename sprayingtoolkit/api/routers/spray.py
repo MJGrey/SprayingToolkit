@@ -10,14 +10,23 @@ log = logging.getLogger("atomizer.api.spray")
 
 router = APIRouter()
 
+
 @router.post("/owa")
-async def owa_spray(request: Request, target: Union[str, HttpUrl], spray_params: SprayParams):
+async def owa_spray(
+    request: Request, target: Union[str, HttpUrl], spray_params: SprayParams
+):
     pass
+
 
 @router.post("/lync")
-async def lync_spray(request: Request, target: Union[str, HttpUrl], spray_params: SprayParams):
+async def lync_spray(
+    request: Request, target: Union[str, HttpUrl], spray_params: SprayParams
+):
     pass
 
+
 @router.post("/o365")
-async def o365_spray(request: Request, target: Union[str, HttpUrl], spray_params: SprayParams):
+async def o365_spray(
+    request: Request, target: Union[str, HttpUrl], spray_params: SprayParams
+):
     pass

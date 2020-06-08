@@ -7,24 +7,20 @@ from sprayingtoolkit.modules.lync.recon import LyncRecon
 log = logging.getLogger("atomizer.modules.lync.cli")
 cli = typer.Typer()
 
+
 @cli.command()
 @coro
-async def spray(
-    target: str,
-    username: str,
-    password: str
-):
+async def spray(target: str, username: str, password: str):
     """
     Spray Lync/S4B
     """
 
     log.debug("Ok!")
 
+
 @cli.command()
 @coro
-async def recon(
-    target: str,
-):
+async def recon(target: str,):
     """
     Perform recon only
     """
