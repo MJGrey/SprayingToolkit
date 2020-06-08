@@ -6,12 +6,9 @@
   <img src="http://38.media.tumblr.com/79d7e2a376cb96fb581b3453070f6229/tumblr_ns5suorqYu1szok8ro1_500.gif" alt="SprayingToolkit"/>
 </p>
 
-
-## Description
-
 A collection of Python scripts & utilities that *try* to make password spraying attacks against Lync/S4B, OWA & O365 a lot quicker, less painful and more efficient.
 
-### Brought To You By
+## Brought To You By
 
 <p align="center">
   <a href="https://www.blackhillsinfosec.com/">
