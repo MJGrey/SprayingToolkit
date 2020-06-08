@@ -1,3 +1,5 @@
+![](https://img.shields.io/badge/Python-v3.7+-BLUE)
+
 # SprayingToolkit
 
 <p align="center">
@@ -7,7 +9,7 @@
 
 ## Description
 
-A set of Python scripts/utilities that *tries* to make password spraying attacks against Lync/S4B & OWA a lot quicker, less painful and more efficient.
+A collection of Python scripts & utilities that *try* to make password spraying attacks against Lync/S4B, OWA & O365 a lot quicker, less painful and more efficient.
 
 ### Brought To You By
 
@@ -19,17 +21,29 @@ A set of Python scripts/utilities that *tries* to make password spraying attacks
 
 ## Tool Overview
 
-### Atomizer
+### Atomizer ⚛️
 
-A blazing fast password sprayer Lync/Skype For Business, OWA & O365
-Built on Python 3.7+, HTTPX and AsyncIO.
+A blazing fast password sprayer for Lync, OWA & O365.
+Built on Python 3.7+, [HTTPX](https://github.com/encode/httpx) and AsyncIO.
 
+**New:**
+Now with a RESTful API and HTTP/2 support!
 
-### Spindrift
+### Spindrift 💨
 
 Utility script to convert names to active directory usernames or emails according to a specified format.
 
 (e.g `Alice Eve` => `CONTOSO\aeve`, `Alice Eve` => `aeve@contoso.com` )
+
+### Vaporizer 🌬
+
+A port of [@OrOneEqualsOne](https://twitter.com/OrOneEqualsOne)'s [GatherContacts](https://github.com/clr2of8/GatherContacts) Burp extension to [mitmproxy](https://mitmproxy.org/) add-on with some improvements.
+
+Scrapes Google and Bing for LinkedIn profiles, automatically generates emails from the profile names using the specified pattern and performs password sprays in real-time.
+
+### Aerosol 💦
+
+Scrapes all text from the target website and sends it to [AWS Comprehend](https://aws.amazon.com/comprehend/) for analysis to generate custom wordlists for password spraying.
 
 # Installation
 
