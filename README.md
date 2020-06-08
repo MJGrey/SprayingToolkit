@@ -1,4 +1,4 @@
-![](https://img.shields.io/badge/Python-v3.7+-BLUE)
+![](https://img.shields.io/badge/python-v3.7+-BLUE)
 
 # SprayingToolkit
 
@@ -24,7 +24,7 @@ A blazing fast password sprayer for Lync, OWA & O365.
 Built on Python 3.7+, [HTTPX](https://github.com/encode/httpx) and AsyncIO.
 
 **New:**
-Now with a RESTful API and HTTP/2 support!
+now with a RESTful API, HTTP/2 support and O365 account validation!
 
 ## Spindrift 💨
 
@@ -40,7 +40,7 @@ Scrapes Google and/or Bing for LinkedIn profiles, automatically generates emails
 
 ## Aerosol 💦
 
-Scrapes all text from the target website and sends it to [AWS Comprehend](https://aws.amazon.com/comprehend/) for analysis to generate custom wordlists for password spraying.
+A [mitmproxy](https://mitmproxy.org/) add-on that scrapes all text from the target website and sends it to [AWS Comprehend](https://aws.amazon.com/comprehend/) for analysis to generate custom wordlists for password spraying.
 
 # Installation
 
