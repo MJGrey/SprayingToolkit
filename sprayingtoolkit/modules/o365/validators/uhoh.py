@@ -1,15 +1,16 @@
 import httpx
 import logging
-from core.utils.common import gen_random_string
+from sprayingtoolkit.utils.common import gen_random_string
+from sprayingtoolkit.base import BaseValidator
 
-log = logging.getLogger("atomizer.validators.o365")
-log.setLevel(logging.DEBUG)
+log = logging.getLogger("atomizer.modules.o365.validators")
 
 
-class UhOh365:
-    def __init__(self, target):
+class UhOh365(BaseValidator):
+    def __init__(self, target, interval="1:00:00"):
         self.domain = target
         self.target = target
+        self.interval = interval
         self.client = httpx.AsyncClient(verify=False, http2=True, trust_env=True)
 
         self.user_agent = (
@@ -17,21 +18,8 @@ class UhOh365:
         )
         self.headers = {"User-Agent": self.user_agent, "Accept": "application/json"}
 
-    async def start(self, usernames):
-        pass
-
     async def shutdown(self):
         await self.client.aclose()
-
-    async def is_hosted(self, domain):
-        junk_user = gen_random_string()
-        r = await self.client.get(
-            f"https://outlook.office365.com/autodiscover/autodiscover.json/v1.0/{junk_user}@{domain}?Protocol=Autodiscoverv1",
-            headers=self.headers,
-            allow_redirects=False,
-        )
-        if "outlook.office365.com" in r.text:
-            log.info("Target uses o365")
 
     async def validate(self, email):
         r = await self.client.get(
@@ -42,7 +30,18 @@ class UhOh365:
         if r.status_code == 200 and "X-MailboxGuid" in r.headers.keys():
             log.info(f"{email} => Valid")
         elif r.status_code == 302:
-            if "outlook.office365.com" not in r.text:
+            if (await self.is_hosted_on_o365(self.domain)) == True and "outlook.office365.com" not in r.text:
                 log.info(f"{email} => Valid")
-        else:
-            log.info(f"{email} => Invalid")
+            else:
+                log.info(f"{email} => Invalid")
+
+    async def is_hosted_on_o365(self, domain):
+        junk_user = gen_random_string(20)
+        r = await self.client.get(
+            f"https://outlook.office365.com/autodiscover/autodiscover.json/v1.0/{junk_user}@{domain}?Protocol=Autodiscoverv1",
+            headers=self.headers,
+            allow_redirects=False,
+        )
+        if "outlook.office365.com" in r.text:
+            return True
+        return False

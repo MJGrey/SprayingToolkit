@@ -1,9 +1,10 @@
 import asyncio
 import logging
+import random
 from datetime import datetime
 from datetime import timedelta, tzinfo
 
-log = logging.getLogger("atomizer.utils")
+log = logging.getLogger("atomizer.utils.time")
 
 # https://stackoverflow.com/questions/19654578/python-utc-datetime-objects-iso-format-doesnt-include-z-zulu-or-zero-offset
 # I have no clue what I'm doing here
@@ -18,21 +19,39 @@ class simple_utc(tzinfo):
 def get_utc_time():
     return datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
-
 # https://codereview.stackexchange.com/questions/199743/countdown-timer-in-python
-async def countdown_timer(interval: str, now: datetime = datetime.now):
-    dt = datetime.strptime(interval, "%H:%M:%S")
-    delay = timedelta(
-        hours=int(dt.hour), minutes=int(dt.minute), seconds=int(dt.second)
-    )
-    target = now()
-    one_second_later = timedelta(seconds=1)
+class CountdownTimer:
+    def __init__(self, interval: str, jitter_interval: str = "0:00:00"):
+        self.interval = datetime.strptime(interval, "%H:%M:%S")
+        self.jitter_interval = datetime.strptime(jitter_interval, "%H:%M:%S")
+        self.remaining = timedelta(seconds=0)
 
-    for remaining in range(int(delay.total_seconds()), 0, -1):
-        target += one_second_later
-        print(
-            f"{timedelta(seconds=remaining - 1)} remaining until next spray", end="\r"
+    async def wait(self, now: datetime = datetime.now):
+        delta = timedelta(
+            hours=int(self.interval.hour),
+            minutes=int(self.interval.minute),
+            seconds=int(self.interval.second)
         )
-        duration = (target - now()).total_seconds()
-        if duration > 0:
-            await asyncio.sleep(duration)
+
+        jitter_delta = timedelta(
+            hours=int(self.jitter_interval.hour),
+            minutes=int(self.jitter_interval.minute),
+            seconds=int(self.jitter_interval.second)
+        )
+
+        jitter = random.randint(0, int(jitter_delta.total_seconds()))
+        time_to_wait = int(delta.total_seconds() + jitter)
+
+        log.debug(f"Waiting for {self.interval.time()} (+ jitter: {timedelta(seconds=jitter)})")
+
+        target = now()
+        for remaining in range(time_to_wait, 1, -1):
+            target += timedelta(seconds=1)
+            self.remaining = timedelta(seconds=remaining)
+            sleep_duration = (target - now()).total_seconds()
+            await asyncio.sleep(sleep_duration)
+
+        self.remaining = timedelta(seconds=0)
+
+    def __str__(self):
+        return str(self.remaining)

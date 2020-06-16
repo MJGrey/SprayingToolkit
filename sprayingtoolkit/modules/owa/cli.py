@@ -9,22 +9,35 @@ log = logging.getLogger("atomizer.modules.owa.cli")
 cli = typer.Typer()
 
 
-@cli.command()
+@cli.command(context_settings={"show_default": True})
 @coro
 async def spray(
-    target: str, username: str, password: str, interval: str = typer.Option("1:00:00")
+    target: str,
+    username: str,
+    password: str,
+    interval: str = typer.Option("1:00:00"),
+    interval_jitter: str = typer.Option("0:00:00"),
+    auth_jitter: int = typer.Option(0)
 ):
     """
     Spray OWA
     """
+
     owa_recon = OwaRecon(target)
     try:
-        await owa_recon.start()
+        recon_data = await owa_recon.start()
     finally:
         await owa_recon.shutdown()
 
-    # OwaSprayer(**owa_recon)
-    log.debug("Ok!")
+    sprayer = OwaSprayer(**recon_data)
+    sprayer.interval = interval
+    sprayer.interval_jitter = interval_jitter
+    sprayer.auth_jitter = auth_jitter
+
+    try:
+        results = await sprayer.start(username, password)
+    finally:
+        await sprayer.shutdown()
 
 
 @cli.command()

@@ -50,3 +50,20 @@ class SprayParams(BaseModel):
 
 class ValidateParams(BaseModel):
     pass
+
+class SprayStats:
+    inputs: int = 0
+    execs: int = 0
+
+    @property
+    def pending(self) -> int:
+        return self.inputs - self.execs
+
+
+class SprayState(str, Enum):
+    STARTED = 'started'
+    STOPPED = 'stopped'
+    #CANCELLED = 'cancelled'
+    DONE = 'done'
+    #PAUSED = 'paused'
+    CONFIGURED = 'configured'

@@ -28,6 +28,8 @@ import collections
 import logging
 from binascii import hexlify
 
+log = logging.getLogger("atomizer.utils.ntlmdecoder")
+
 flags_tbl_str = """0x00000001  Negotiate Unicode
 0x00000002  Negotiate OEM
 0x00000004  Request Target
@@ -217,7 +219,13 @@ def pretty_print_response(st):
 
 
 def ntlmdecode(authenticate_header):
-    _, st_raw = authenticate_header.split(",")[0].split()
+    log.debug(f"Attempting to parse NTLM auth header from: '{authenticate_header}'")
+    st_raw = None
+    for element in authenticate_header.split(','):
+        fields = element.split()
+        if fields[0] == 'NTLM':
+            st_raw = fields[1]
+            break
     try:
         st = base64.b64decode(st_raw)
     except Exception:

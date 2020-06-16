@@ -29,7 +29,7 @@ class LyncRecon:
         )
 
         log.debug(f"Lync/S4B base url: {base_url}")
-        log.debug(f"Lync/S4b auth url: {auth_url}")
+        log.debug(f"Lync/S4B auth url: {auth_url}")
 
         hosting_location = await self.get_hosting_location(base_url)
         if hosting_location == HostingLocation.internal:
